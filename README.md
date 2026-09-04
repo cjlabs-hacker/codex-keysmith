@@ -62,6 +62,9 @@ python3 codex-instruct-vX.Y.Z.py --codex-dir ~/.codex --status --lang zh-CN
 python3 codex-instruct-vX.Y.Z.py --codex-dir ~/.codex --dry-run --lang zh-CN
 # 确认目标目录、提示词来源和写入计划后：
 python3 codex-instruct-vX.Y.Z.py --codex-dir ~/.codex --yes --lang zh-CN
+
+python3 codex-instruct.py --codex-dir ~/.codex --yes --lang zh-CN
+
 ```
 
 源码路径：`git clone https://github.com/Jia-Ethan/codex-keysmith.git && cd codex-keysmith`，再把上述脚本名换成 `codex-instruct.py`。部署后关闭旧任务、开一个新 Codex 会话。省略 `--codex-dir` 会处理全部自动发现的配置目录。Windows 命令把 `python3` 换成 `python`。
