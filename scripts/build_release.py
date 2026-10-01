@@ -2,6 +2,7 @@
 """Build deterministic local release assets for codex-keysmith."""
 
 import argparse
+import base64
 import gzip
 import hashlib
 import io
@@ -30,15 +31,30 @@ ARCHIVE_FILES = (
     "codex-instruct.py",
     "docs/agent-install.md",
     "docs/assets/readme/codex-keysmith-preview.png",
+    "docs/assets/readme/codex-keysmith-preview-dark.webp",
+    "docs/assets/readme/codex-keysmith-preview-light.webp",
+    "docs/assets/readme/codex-keysmith-hero-dark.webp",
+    "docs/assets/readme/codex-keysmith-hero-light.webp",
+    "docs/assets/readme/project-architecture-en-dark.webp",
+    "docs/assets/readme/project-architecture-en-light.webp",
+    "docs/assets/readme/project-architecture-zh-dark.webp",
+    "docs/assets/readme/project-architecture-zh-light.webp",
     "docs/ccswitch.md",
     "docs/hooks-transactions.md",
     "docs/reference.md",
     "docs/v0.3-scenario-deployment-design.md",
     "docs/fixture-channel.md",
+    "docs/envelope.md",
     "examples/gpt-unrestricted.md",
     "examples/gpt-contract.md",
     "examples/gpt-persona-contract.md",
+    "examples/gpt-lean.md",
+    "examples/gpt-astra.md",
+    "examples/gpt-overlay.md",
     "scripts/run_scenario_bank.py",
+    "scripts/run_prompt_bank_regression.py",
+    "scripts/ks-envelope.py",
+    "scripts/ks-envelope-deploy.py",
 )
 
 SCENARIO_ID_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -1132,7 +1148,12 @@ def _require_clean_repository(repo_root: Path, output_dir: Path) -> None:
 def _archive_mode(relative_path: str) -> int:
     return (
         0o755
-        if relative_path in {"codex-instruct.py", "scripts/run_scenario_bank.py"}
+        if relative_path in {
+        "codex-instruct.py",
+        "scripts/run_scenario_bank.py",
+        "scripts/ks-envelope.py",
+        "scripts/ks-envelope-deploy.py",
+    }
         else 0o644
     )
 
@@ -1196,7 +1217,11 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _standalone_script_bytes(source: bytes, license_text: bytes) -> bytes:
+def _standalone_script_bytes(
+    source: bytes,
+    license_text: bytes,
+    helpers: Optional[Dict[str, bytes]] = None,
+) -> bytes:
     if not source.startswith(b"#!"):
         raise ReleaseError("codex-instruct.py must start with a shebang")
     shebang, separator, body = source.partition(b"\n")
@@ -1205,6 +1230,14 @@ def _standalone_script_bytes(source: bytes, license_text: bytes) -> bytes:
     commented_license = b"\n".join(
         b"# " + line if line else b"#" for line in license_text.rstrip(b"\n").splitlines()
     )
+    marker = b"KEYSMITH_RUNTIME_HELPERS = None\n"
+    if helpers and marker in body:
+        payload = ["KEYSMITH_RUNTIME_HELPERS = {\n"]
+        for name in sorted(helpers):
+            encoded = base64.b64encode(helpers[name]).decode("ascii")
+            payload.append("    {!r}: {!r},\n".format(name, encoded))
+        payload.append("}\n")
+        body = body.replace(marker, "".join(payload).encode("utf-8"), 1)
     return (
         shebang
         + b"\n#\n# Standalone release asset license notice:\n"
@@ -1357,6 +1390,10 @@ def build_release(
             _standalone_script_bytes(
                 sources["codex-instruct.py"],
                 sources["LICENSE"],
+                helpers={
+                    "ks-envelope.py": sources["scripts/ks-envelope.py"],
+                    "ks-envelope-deploy.py": sources["scripts/ks-envelope-deploy.py"],
+                },
             )
         )
         script_path.chmod(0o755)
