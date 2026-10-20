@@ -104,6 +104,11 @@ python3 codex-instruct.py --codex-dir ~/.codex --yes --lang zh-CN
 python3 codex-instruct-vX.Y.Z.py --codex-dir ~/.codex --restore-hooks --lang zh-CN
 python3 codex-instruct-vX.Y.Z.py --codex-dir ~/.codex --uninstall --lang zh-CN
 python3 codex-instruct-vX.Y.Z.py --codex-dir ~/.codex --uninstall --yes --lang zh-CN
+
+
+python3 codex-instruct.py --codex-dir ~/.codex --uninstall --yes --lang zh-CN
+
+
 ```
 
 `--reactivate` 从 `v0.3.9` 开始提供：
